@@ -1,12 +1,14 @@
-import { getStore } from "@/lib/data/store";
+import { getServerStore as getStore } from "@/lib/data/server-store";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 
-export default function ConversationsPage() {
-  const store = getStore();
-  const convs = store.listConversations();
+export default async function ConversationsPage() {
+  const store = await getStore();
+  const convs = await store.listConversations();
+  const businessById = new Map();
+  for (const c of convs) businessById.set(c.business_id, await store.getBusiness(c.business_id));
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -19,7 +21,7 @@ export default function ConversationsPage() {
             <thead className="border-b bg-muted/50"><tr><th className="p-3 text-left">Business</th><th className="p-3 text-left">Provider</th><th className="p-3 text-left">Status</th><th className="p-3 text-left">AI</th><th className="p-3 text-left">Last message</th><th className="p-3"></th></tr></thead>
             <tbody>
               {convs.map((c) => {
-                const b = store.getBusiness(c.business_id);
+                const b = businessById.get(c.business_id);
                 return (
                   <tr key={c.id} className="border-b hover:bg-muted/30">
                     <td className="p-3 font-medium">{b?.business_name}</td>
@@ -39,4 +41,10 @@ export default function ConversationsPage() {
     </div>
   );
 }
+
+
+
+
+
+
 

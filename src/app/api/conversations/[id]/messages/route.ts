@@ -1,16 +1,16 @@
 import { NextResponse } from "next/server";
-import { getStore } from "@/lib/data/store";
+import { getServerStore as getStore } from "@/lib/data/server-store";
 import { getCurrentUser } from "@/lib/auth/session";
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id } = await params;
-  const store = getStore();
-  const conv = store.getConversation(id);
+  const store = await getStore();
+  const conv = await store.getConversation(id);
   if (!conv) return NextResponse.json({ error: "Not found" }, { status: 404 });
   const body = await req.json().catch(() => ({}));
-  const msg = store.createMessage({
+  const msg = await store.createMessage({
     organization_id: conv.organization_id,
     conversation_id: id,
     business_id: conv.business_id,
@@ -25,3 +25,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   });
   return NextResponse.json({ message: msg });
 }
+
+
+
+
+
+

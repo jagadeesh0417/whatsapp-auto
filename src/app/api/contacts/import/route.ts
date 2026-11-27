@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getStore } from "@/lib/data/store";
+import { getServerStore as getStore } from "@/lib/data/server-store";
 import { normalizePhone } from "@/lib/security/phone";
 import { getCurrentUser } from "@/lib/auth/session";
 
@@ -9,7 +9,7 @@ export async function POST(req: Request) {
   let body: { rows?: Record<string, string>[] };
   try { body = await req.json(); } catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }); }
   const rows = body.rows || [];
-  const store = getStore();
+  const store = await getStore();
   const errors: string[] = [];
   let imported = 0;
   for (let i = 0; i < rows.length; i++) {
@@ -19,10 +19,10 @@ export async function POST(req: Request) {
     const phone = r.phone_number ? normalizePhone(r.phone_number) : "";
     // dedup
     if (phone) {
-      const existing = store.listBusinesses().find((b) => b.normalized_phone_number === phone.replace(/\D/g, ""));
+      const existing = (await store.listBusinesses()).find((b) => b.normalized_phone_number === phone.replace(/\D/g, ""));
       if (existing) { errors.push(`Row ${i + 2}: duplicate phone ${phone}`); continue; }
     }
-    const b = store.createBusiness({
+    const b = await store.createBusiness({
       organization_id: user.organization_id,
       business_name: name,
       contact_person: r.contact_person || undefined,
@@ -36,7 +36,7 @@ export async function POST(req: Request) {
       notes: r.notes || undefined,
       source: "import",
     });
-    store.upsertConsent({
+    await store.upsertConsent({
       organization_id: user.organization_id,
       business_id: b.id,
       communication_channel: "whatsapp",
@@ -46,6 +46,12 @@ export async function POST(req: Request) {
     });
     imported++;
   }
-  store.logActivity("import_contacts", "business", undefined, { imported, errors: errors.length }, user.id);
+  await store.logActivity("import_contacts", "business", undefined, { imported, errors: errors.length }, user.id);
   return NextResponse.json({ imported, errors });
 }
+
+
+
+
+
+

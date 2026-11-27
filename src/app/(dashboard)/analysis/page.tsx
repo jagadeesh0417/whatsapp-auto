@@ -1,4 +1,4 @@
-import { getStore } from "@/lib/data/store";
+import { getServerStore as getStore } from "@/lib/data/server-store";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { getAIProvider } from "@/lib/ai/provider";
@@ -6,21 +6,21 @@ import Link from "next/link";
 
 export default async function AnalysisPage({ searchParams }: { searchParams: Promise<{ business?: string }> }) {
   const sp = await searchParams;
-  const store = getStore();
-  const businesses = store.listBusinesses();
+  const store = await getStore();
+  const businesses = await store.listBusinesses();
   const selectedId = sp.business || businesses[0]?.id;
-  const selected = selectedId ? store.getBusiness(selectedId) : null;
-  const analysis = selectedId ? store.getAnalysis(selectedId) : null;
+  const selected = selectedId ? await store.getBusiness(selectedId) : null;
+  const analysis = selectedId ? await store.getAnalysis(selectedId) : null;
 
   async function runAnalysis(formData: FormData) {
     "use server";
     const id = String(formData.get("business_id"));
-    const s = getStore();
-    const b = s.getBusiness(id);
+    const s = await getStore();
+    const b = await s.getBusiness(id);
     if (!b) return;
     const provider = getAIProvider();
     const result = await provider.analyzeBusiness({ business: b as unknown as Record<string, unknown> });
-    s.upsertAnalysis({
+    await s.upsertAnalysis({
       organization_id: b.organization_id,
       business_id: b.id,
       analysis_status: "completed",
@@ -31,8 +31,8 @@ export default async function AnalysisPage({ searchParams }: { searchParams: Pro
       confidence: (result.confidence as number) || 0.5,
     });
     // store extra in evidence for display
-    s.getAnalysis(b.id)!.evidence = { ...s.getAnalysis(b.id)!.evidence, ai_suggestions: result.ai_suggestions, unverified_assumptions: result.unverified_assumptions, business_summary: result.business_summary, industry: result.industry, potential_requirements: result.potential_requirements, recommended_next_action: result.recommended_next_action };
-    s.logActivity("analyze_business", "business_analysis", b.id, {}, undefined);
+    const _a = await s.getAnalysis(b.id); if (_a) { _a.evidence = { ..._a.evidence, ai_suggestions: result.ai_suggestions, unverified_assumptions: result.unverified_assumptions, business_summary: result.business_summary, industry: result.industry, potential_requirements: result.potential_requirements, recommended_next_action: result.recommended_next_action }; }
+    await s.logActivity("analyze_business", "business_analysis", b.id, {}, undefined);
   }
 
   return (
@@ -73,3 +73,9 @@ export default async function AnalysisPage({ searchParams }: { searchParams: Pro
     </div>
   );
 }
+
+
+
+
+
+

@@ -12,3 +12,5 @@ export function isValidPhone(input: string): boolean {
   const n = normalizePhone(input);
   return /^\+\d{10,15}$/.test(n);
 }
+
+

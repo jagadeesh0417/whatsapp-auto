@@ -1,11 +1,11 @@
-import { getStore } from "@/lib/data/store";
+import { getServerStore as getStore } from "@/lib/data/server-store";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { isSupabaseConfigured, isGeminiConfigured, env } from "@/lib/config/env";
 
-export default function SettingsPage() {
-  const store = getStore();
-  const settings = store.listSettings();
+export default async function SettingsPage() {
+  const store = await getStore();
+  const settings = await store.listSettings();
   const get = (k: string) => settings.find((s) => s.setting_key === k)?.setting_value;
 
   return (
@@ -14,9 +14,14 @@ export default function SettingsPage() {
 
       <Card>
         <CardHeader><CardTitle className="text-base">Organization</CardTitle></CardHeader>
-        <CardContent className="text-sm space-y-1">
+        <CardContent className="text-sm space-y-3">
           <div>Agency name: {String(get("agency_name") || "AKRADHI")}</div>
           <div>Timezone: {String(get("timezone") || env.APP_TIMEZONE)}</div>
+          <form action={async (fd) => { "use server"; const s = await getStore(); await s.upsertSetting("agency_name", String(fd.get("agency_name") || "AKRADHI")); await s.upsertSetting("timezone", String(fd.get("timezone") || env.APP_TIMEZONE)); }} className="flex gap-2 items-end">
+            <input name="agency_name" placeholder="Agency name" className="border rounded px-2 py-1 text-sm bg-background" />
+            <input name="timezone" placeholder="Timezone" className="border rounded px-2 py-1 text-sm bg-background" />
+            <Button type="submit" size="sm">Save</Button>
+          </form>
         </CardContent>
       </Card>
 
@@ -63,3 +68,9 @@ export default function SettingsPage() {
     </div>
   );
 }
+
+
+
+
+
+

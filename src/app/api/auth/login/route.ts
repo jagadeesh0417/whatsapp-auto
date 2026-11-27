@@ -28,3 +28,5 @@ export async function POST(req: Request) {
   cookieStore.set("akradhi_session", "demo", { httpOnly: true, sameSite: "lax", path: "/", maxAge: 60 * 60 * 24 * 7 });
   return NextResponse.json({ ok: true });
 }
+
+

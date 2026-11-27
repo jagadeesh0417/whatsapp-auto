@@ -6,3 +6,5 @@ export async function POST() {
   cookieStore.delete("akradhi_session");
   return NextResponse.json({ ok: true });
 }
+
+

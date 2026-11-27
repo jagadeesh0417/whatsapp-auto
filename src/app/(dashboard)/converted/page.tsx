@@ -1,10 +1,10 @@
-import { getStore } from "@/lib/data/store";
+import { getServerStore as getStore } from "@/lib/data/server-store";
 import { Card, CardContent } from "@/components/ui/card";
 import Link from "next/link";
 
-export default function ConvertedPage() {
-  const store = getStore();
-  const items = store.listBusinesses().filter((b) => b.pipeline_status === "converted");
+export default async function ConvertedPage() {
+  const store = await getStore();
+  const items = await store.listBusinesses().filter((b) => b.pipeline_status === "converted");
   const revenue = store.pipelines.filter((p) => store.getBusiness(p.business_id)?.pipeline_status === "converted").reduce((s, p) => s + (p.actual_value || 0), 0);
   return (
     <div className="space-y-4">
@@ -24,3 +24,9 @@ export default function ConvertedPage() {
     </div>
   );
 }
+
+
+
+
+
+

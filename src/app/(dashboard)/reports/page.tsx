@@ -3,13 +3,13 @@ import { useState } from "react";
 import { getStore } from "@/lib/data/store";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 
 export default function ReportsPage() {
   const store = getStore();
   const [range, setRange] = useState("30");
 
-  function exportCSV() {
+  async function exportCSV() {
     const businesses = store.listBusinesses();
     const rows = businesses.map((b) => ({
       business_name: b.business_name,
@@ -31,16 +31,21 @@ export default function ReportsPage() {
       }
       return out;
     });
-    const ws = XLSX.utils.json_to_sheet(safe);
-    const csv = XLSX.utils.sheet_to_csv(ws);
-    const blob = new Blob([csv], { type: "text/csv" });
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet("Contacts");
+    if (safe.length) {
+      ws.columns = Object.keys(safe[0]).map((k) => ({ header: k, key: k }));
+      safe.forEach((r) => ws.addRow(r));
+    }
+    const buf = await wb.csv.writeBuffer();
+    const blob = new Blob([buf], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url; a.download = "akradhi-report.csv"; a.click();
     URL.revokeObjectURL(url);
   }
 
-  function exportXLSX() {
+  async function exportXLSX() {
     const businesses = store.listBusinesses();
     const rows = businesses.map((b) => ({
       business_name: b.business_name,
@@ -51,10 +56,18 @@ export default function ReportsPage() {
       city: b.city || "",
       pipeline_status: b.pipeline_status,
     }));
-    const ws = XLSX.utils.json_to_sheet(rows);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Contacts");
-    XLSX.writeFile(wb, "akradhi-report.xlsx");
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet("Contacts");
+    if (rows.length) {
+      ws.columns = Object.keys(rows[0]).map((k) => ({ header: k, key: k }));
+      rows.forEach((r) => ws.addRow(r));
+    }
+    const buf = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "akradhi-report.xlsx"; a.click();
+    URL.revokeObjectURL(url);
   }
 
   const businesses = store.listBusinesses();

@@ -1,4 +1,4 @@
-import { getStore } from "@/lib/data/store";
+import { getServerStore as getStore } from "@/lib/data/server-store";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,8 +7,10 @@ import { Badge } from "@/components/ui/badge";
 
 export default async function ContactsPage({ searchParams }: { searchParams: Promise<{ q?: string; status?: string; category?: string }> }) {
   const sp = await searchParams;
-  const store = getStore();
-  const businesses = store.listBusinesses({ q: sp.q, pipeline_status: sp.status, category: sp.category });
+  const store = await getStore();
+  const businesses = await store.listBusinesses({ q: sp.q, pipeline_status: sp.status, category: sp.category });
+  const consentMap = new Map();
+  for (const b of businesses) consentMap.set(b.id, await store.getConsent(b.id));
 
   return (
     <div className="space-y-4">
@@ -43,8 +45,8 @@ export default async function ContactsPage({ searchParams }: { searchParams: Pro
               </tr>
             </thead>
             <tbody>
-              {businesses.map((b) => {
-                const c = store.getConsent(b.id);
+              {businesses.map((b: any) => {
+                const c = consentMap.get(b.id);
                 return (
                   <tr key={b.id} className="border-b hover:bg-muted/30">
                     <td className="p-3 font-medium">{b.business_name}</td>
@@ -68,4 +70,12 @@ export default async function ContactsPage({ searchParams }: { searchParams: Pro
     </div>
   );
 }
+
+
+
+
+
+
+
+
 

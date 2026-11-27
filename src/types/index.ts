@@ -247,3 +247,5 @@ export interface Setting {
   setting_value: unknown;
   updated_at: string;
 }
+
+

@@ -1,12 +1,14 @@
-import { getStore } from "@/lib/data/store";
+import { getServerStore as getStore } from "@/lib/data/server-store";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 
-export default function FollowUpsPage() {
-  const store = getStore();
-  const items = store.listFollowUps();
+export default async function FollowUpsPage() {
+  const store = await getStore();
+  const items = await store.listFollowUps();
+  const businessById = new Map();
+  for (const f of items) businessById.set(f.business_id, await store.getBusiness(f.business_id));
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -18,7 +20,7 @@ export default function FollowUpsPage() {
             <thead className="border-b bg-muted/50"><tr><th className="p-3 text-left">Business</th><th className="p-3 text-left">Due</th><th className="p-3 text-left">Reason</th><th className="p-3 text-left">Status</th><th className="p-3 text-left">Actions</th></tr></thead>
             <tbody>
               {items.map((f) => {
-                const b = store.getBusiness(f.business_id);
+                const b = businessById.get(f.business_id);
                 return (
                   <tr key={f.id} className="border-b">
                     <td className="p-3">{b?.business_name}</td>
@@ -28,8 +30,8 @@ export default function FollowUpsPage() {
                     <td className="p-3 flex gap-2">
                       {f.status === "pending" && (
                         <>
-                          <form action={async () => { "use server"; getStore().updateFollowUp(f.id, { status: "completed" }); }}><Button size="sm" type="submit">Complete</Button></form>
-                          <form action={async () => { "use server"; getStore().updateFollowUp(f.id, { status: "cancelled" }); }}><Button size="sm" variant="destructive" type="submit">Cancel</Button></form>
+                          <form action={async () => { "use server"; (await getStore()).updateFollowUp(f.id, { status: "completed" }); }}><Button size="sm" type="submit">Complete</Button></form>
+                          <form action={async () => { "use server"; (await getStore()).updateFollowUp(f.id, { status: "cancelled" }); }}><Button size="sm" variant="destructive" type="submit">Cancel</Button></form>
                         </>
                       )}
                       <Link href={`/contacts/${f.business_id}`} className="text-xs text-primary hover:underline">View</Link>
@@ -48,3 +50,9 @@ export default function FollowUpsPage() {
 }
 
 import { CreateFollowUpForm } from "@/components/dashboard/create-followup";
+
+
+
+
+
+

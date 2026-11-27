@@ -13,3 +13,5 @@ export class ManualWhatsAppProvider implements WhatsAppProvider {
     return `https://wa.me/${n}?text=${encodeURIComponent(text)}`;
   }
 }
+
+

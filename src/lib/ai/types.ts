@@ -37,3 +37,5 @@ export interface AIProvider {
   generateReply(incomingMessage: string, context: AIContext): Promise<AIReplyResult>;
   analyzeBusiness(context: AIContext): Promise<Record<string, unknown>>;
 }
+
+

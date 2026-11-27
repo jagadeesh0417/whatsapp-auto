@@ -19,3 +19,5 @@ export class OfficialWhatsAppProvider implements WhatsAppProvider {
     return `https://wa.me/${phone.replace(/\D/g, "")}?text=${encodeURIComponent(text)}`;
   }
 }
+
+

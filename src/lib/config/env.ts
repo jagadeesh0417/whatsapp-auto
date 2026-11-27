@@ -57,3 +57,5 @@ export const isSupabaseConfigured = Boolean(
 export const isGeminiConfigured = Boolean(env.GEMINI_API_KEY);
 
 export const isSimulationMode = env.ENABLE_SIMULATION_MODE || !isSupabaseConfigured;
+
+

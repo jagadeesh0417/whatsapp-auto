@@ -13,3 +13,5 @@ export function getWhatsAppProvider(): WhatsAppProvider {
   if (p === "manual") return new ManualWhatsAppProvider();
   return new SimulationWhatsAppProvider();
 }
+
+

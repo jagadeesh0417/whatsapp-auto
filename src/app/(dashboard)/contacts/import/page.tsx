@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 import Papa from "papaparse";
 
 interface Row { business_name: string; contact_person?: string; phone_number?: string; email?: string; business_category?: string; city?: string; state?: string; website_url?: string; notes?: string; consent_status?: string; consent_source?: string; consent_evidence?: string; }
@@ -28,10 +28,19 @@ export default function ImportPage() {
       } });
     } else if (ext === "xlsx" || ext === "xls") {
       const reader = new FileReader();
-      reader.onload = (e) => {
-        const wb = XLSX.read(e.target?.result, { type: "array" });
-        const ws = wb.Sheets[wb.SheetNames[0]];
-        const json = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws);
+      reader.onload = async (e) => {
+        const wb = new ExcelJS.Workbook();
+        await wb.xlsx.load(e.target?.result as ArrayBuffer);
+        const ws = wb.worksheets[0];
+        const json: Record<string, unknown>[] = [];
+        const header: string[] = [];
+        ws.getRow(1).eachCell((cell, colNumber) => { header[colNumber] = String(cell.value || ""); });
+        ws.eachRow((row, rowNumber) => {
+          if (rowNumber === 1) return;
+          const obj: Record<string, unknown> = {};
+          row.eachCell((cell, colNumber) => { obj[header[colNumber]] = cell.value; });
+          json.push(obj);
+        });
         const data = json.map(normalizeRow);
         setRows(data);
         validateRows(data);

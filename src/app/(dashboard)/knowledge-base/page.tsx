@@ -1,4 +1,4 @@
-import { getStore } from "@/lib/data/store";
+import { getServerStore as getStore } from "@/lib/data/server-store";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -6,9 +6,10 @@ import Link from "next/link";
 
 export default async function KnowledgeBasePage({ searchParams }: { searchParams: Promise<{ category?: string }> }) {
   const sp = await searchParams;
-  const store = getStore();
-  const entries = store.listKnowledgeBase(sp.category);
-  const categories = Array.from(new Set(store.listKnowledgeBase().map((k) => k.category)));
+  const store = await getStore();
+  const entries = await store.listKnowledgeBase(sp.category);
+  const allKb = await store.listKnowledgeBase();
+  const categories = Array.from(new Set(allKb.map((k) => k.category)));
 
   return (
     <div className="space-y-4">
@@ -18,7 +19,7 @@ export default async function KnowledgeBasePage({ searchParams }: { searchParams
       </div>
       <div className="flex gap-2 flex-wrap">
         <Link href="/knowledge-base"><Button variant={!sp.category ? "default" : "outline"} size="sm">All</Button></Link>
-        {categories.map((c) => (
+        {categories.map((c: any) => (
           <Link key={c} href={`/knowledge-base?category=${c}`}><Button variant={sp.category === c ? "default" : "outline"} size="sm">{c}</Button></Link>
         ))}
       </div>
@@ -35,7 +36,7 @@ export default async function KnowledgeBasePage({ searchParams }: { searchParams
                   <td className="p-3">{e.version}</td>
                   <td className="p-3 flex gap-2">
                     <Link href={`/knowledge-base/${e.id}/edit`} className="text-xs text-primary hover:underline">Edit</Link>
-                    <form action={async () => { "use server"; getStore().archiveKnowledgeBase(e.id); }}><button className="text-xs text-red-500">Archive</button></form>
+                    <form action={async () => { "use server"; (await getStore()).archiveKnowledgeBase(e.id); }}><button className="text-xs text-red-500">Archive</button></form>
                   </td>
                 </tr>
               ))}
@@ -47,4 +48,10 @@ export default async function KnowledgeBasePage({ searchParams }: { searchParams
     </div>
   );
 }
+
+
+
+
+
+
 

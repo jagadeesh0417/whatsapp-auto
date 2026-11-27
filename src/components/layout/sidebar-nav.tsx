@@ -18,6 +18,7 @@ const items = [
   { href: "/conversations", label: "Conversations", icon: MessageSquare },
   { href: "/assistant", label: "AI Assistant", icon: Bot },
   { href: "/follow-ups", label: "Follow-ups", icon: CalendarClock },
+  { href: "/meetings", label: "Meetings", icon: CalendarClock },
   { href: "/pipeline", label: "Sales Pipeline", icon: Kanban },
   { href: "/interested", label: "Interested Clients", icon: Star },
   { href: "/converted", label: "Converted Clients", icon: CheckCircle2 },

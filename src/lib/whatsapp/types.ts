@@ -20,3 +20,5 @@ export interface WhatsAppProvider {
   // manual mode helpers
   buildClickToChatLink(phone: string, text: string): string;
 }
+
+

@@ -25,3 +25,5 @@ export function isSafeUrl(raw: string): { safe: boolean; reason?: string } {
   if (host.endsWith(".local") || host.endsWith(".internal")) return { safe: false, reason: "internal host" };
   return { safe: true };
 }
+
+

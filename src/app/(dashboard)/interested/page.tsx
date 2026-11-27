@@ -1,10 +1,10 @@
-import { getStore } from "@/lib/data/store";
+import { getServerStore as getStore } from "@/lib/data/server-store";
 import { Card, CardContent } from "@/components/ui/card";
 import Link from "next/link";
 
-export default function InterestedPage() {
-  const store = getStore();
-  const items = store.listBusinesses().filter((b) => b.pipeline_status === "interested");
+export default async function InterestedPage() {
+  const store = await getStore();
+  const items = await store.listBusinesses().filter((b) => b.pipeline_status === "interested");
   return (
     <div className="space-y-4">
       <h2 className="text-2xl font-semibold">Interested Clients</h2>
@@ -22,3 +22,9 @@ export default function InterestedPage() {
     </div>
   );
 }
+
+
+
+
+
+

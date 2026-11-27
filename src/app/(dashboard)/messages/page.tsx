@@ -1,4 +1,4 @@
-import { getStore } from "@/lib/data/store";
+import { getServerStore as getStore } from "@/lib/data/server-store";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -6,40 +6,41 @@ import Link from "next/link";
 
 export default async function MessagesPage({ searchParams }: { searchParams: Promise<{ business?: string }> }) {
   const sp = await searchParams;
-  const store = getStore();
-  const items = store.listMessageQueue();
-  const businesses = store.listBusinesses();
+  const store = await getStore();
+  const items = await store.listMessageQueue();
+  const businesses = await store.listBusinesses();
+  const businessById = new Map(businesses.map((b) => [b.id, b]));
 
   async function generateDraft(formData: FormData) {
     "use server";
     const business_id = String(formData.get("business_id"));
     const message_type = String(formData.get("message_type"));
-    const s = getStore();
-    const b = s.getBusiness(business_id);
+    const s = await getStore();
+    const b = await s.getBusiness(business_id);
     if (!b) return;
     const { getAIProvider } = await import("@/lib/ai/provider");
     const provider = getAIProvider();
-    const kb = s.listKnowledgeBase(undefined, true).map((k) => ({ title: k.title, content: k.content }));
+    const kb = (await s.listKnowledgeBase(undefined, true)).map((k) => ({ title: k.title, content: k.content }));
     const res = await provider.generateDraft(message_type, { business: b as unknown as Record<string, unknown>, knowledge: kb });
-    s.createMessageQueueItem({ organization_id: b.organization_id, business_id, message_type, generated_content: res.content, approval_status: "pending" });
-    const { logAIUsage } = await import("@/lib/data/store").then(() => ({ logAIUsage: null })).catch(() => ({ logAIUsage: null }));
-    void logAIUsage;
-    s.logAIUsage({ organization_id: b.organization_id, operation: "draft_message", model: res.model, status: "success" });
-    s.logActivity("generate_draft", "message_queue", business_id, { message_type }, undefined);
+    await s.createMessageQueueItem({ organization_id: b.organization_id, business_id, message_type, generated_content: res.content, approval_status: "pending" });
+    await s.logAIUsage({ organization_id: b.organization_id, operation: "draft_message", model: res.model, status: "success" });
+    await s.logActivity("generate_draft", "message_queue", business_id, { message_type }, undefined);
   }
 
   async function approve(id: string) {
     "use server";
-    const s = getStore();
-    s.updateMessageQueueItem(id, { approval_status: "approved", approved_by: "demo", approved_at: new Date().toISOString() });
-    s.logActivity("approve_message", "message_queue", id, {}, undefined);
+    const s = await getStore();
+    await s.updateMessageQueueItem(id, { approval_status: "approved", approved_by: "demo", approved_at: new Date().toISOString() });
+    await s.logActivity("approve_message", "message_queue", id, {}, undefined);
   }
   async function reject(id: string) {
     "use server";
-    const s = getStore();
-    s.updateMessageQueueItem(id, { approval_status: "rejected", rejection_reason: "Rejected by reviewer" });
-    s.logActivity("reject_message", "message_queue", id, {}, undefined);
+    const s = await getStore();
+    await s.updateMessageQueueItem(id, { approval_status: "rejected", rejection_reason: "Rejected by reviewer" });
+    await s.logActivity("reject_message", "message_queue", id, {}, undefined);
   }
+
+  const rows = items.map((q) => ({ q, b: businessById.get(q.business_id) }));
 
   return (
     <div className="space-y-4">
@@ -71,35 +72,32 @@ export default async function MessagesPage({ searchParams }: { searchParams: Pro
               <tr><th className="p-3 text-left">Business</th><th className="p-3 text-left">Type</th><th className="p-3 text-left">Status</th><th className="p-3 text-left">Content</th><th className="p-3 text-left">Actions</th></tr>
             </thead>
             <tbody>
-              {items.map((q) => {
-                const b = store.getBusiness(q.business_id);
-                return (
-                  <tr key={q.id} className="border-b align-top">
-                    <td className="p-3 font-medium">{b?.business_name}</td>
-                    <td className="p-3">{q.message_type}</td>
-                    <td className="p-3"><Badge variant="secondary">{q.approval_status}</Badge></td>
-                    <td className="p-3 max-w-md">
-                      <div className="text-xs text-muted-foreground line-clamp-3">{q.edited_content || q.generated_content}</div>
-                      {q.approval_status === "approved" && (
-                        <a href={`https://wa.me/${(b?.phone_number || "").replace(/\\D/g, "")}?text=${encodeURIComponent(q.edited_content || q.generated_content)}`} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline">Open WhatsApp</a>
-                      )}
-                    </td>
-                    <td className="p-3 flex gap-2">
-                      {q.approval_status === "pending" && (
-                        <>
-                          <form action={async () => { "use server"; await approve(q.id); }}><Button size="sm" type="submit">Approve</Button></form>
-                          <form action={async () => { "use server"; await reject(q.id); }}><Button size="sm" variant="destructive" type="submit">Reject</Button></form>
-                        </>
-                      )}
-                      {q.approval_status === "approved" && (
-                        <form action={async () => { "use server"; const s = getStore(); s.updateMessageQueueItem(q.id, { approval_status: "sent" }); s.logActivity("manual_send_confirmed", "message_queue", q.id, {}, undefined); }}>
-                          <Button size="sm" variant="outline" type="submit">Mark sent</Button>
-                        </form>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
+              {rows.map(({ q, b }) => (
+                <tr key={q.id} className="border-b align-top">
+                  <td className="p-3 font-medium">{b?.business_name}</td>
+                  <td className="p-3">{q.message_type}</td>
+                  <td className="p-3"><Badge variant="secondary">{q.approval_status}</Badge></td>
+                  <td className="p-3 max-w-md">
+                    <div className="text-xs text-muted-foreground line-clamp-3">{q.edited_content || q.generated_content}</div>
+                    {q.approval_status === "approved" && (
+                      <a href={`https://wa.me/${(b?.phone_number || "").replace(/\\D/g, "")}?text=${encodeURIComponent(q.edited_content || q.generated_content)}`} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline">Open WhatsApp</a>
+                    )}
+                  </td>
+                  <td className="p-3 flex gap-2">
+                    {q.approval_status === "pending" && (
+                      <>
+                        <form action={async () => { "use server"; await approve(q.id); }}><Button size="sm" type="submit">Approve</Button></form>
+                        <form action={async () => { "use server"; await reject(q.id); }}><Button size="sm" variant="destructive" type="submit">Reject</Button></form>
+                      </>
+                    )}
+                    {q.approval_status === "approved" && (
+                      <form action={async () => { "use server"; const s = await getStore(); await s.updateMessageQueueItem(q.id, { approval_status: "sent" }); await s.logActivity("manual_send_confirmed", "message_queue", q.id, {}, undefined); }}>
+                        <Button size="sm" variant="outline" type="submit">Mark sent</Button>
+                      </form>
+                    )}
+                  </td>
+                </tr>
+              ))}
               {items.length === 0 && <tr><td colSpan={5} className="p-4 text-center text-muted-foreground">No messages.</td></tr>}
             </tbody>
           </table>
@@ -108,3 +106,6 @@ export default async function MessagesPage({ searchParams }: { searchParams: Pro
     </div>
   );
 }
+
+
+

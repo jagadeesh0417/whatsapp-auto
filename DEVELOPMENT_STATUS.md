@@ -1,29 +1,30 @@
 # Development Status
 
-## Completed
-- Phase 1 Foundation: Next.js, auth, migrations, protected routes.
-- Phase 2 CRM: contacts, import, consent, pipeline.
-- Phase 3 AI: provider abstraction, Gemini, knowledge base, analysis, drafting.
-- Phase 4 Communication: simulation, manual, approval queue.
-- Phase 5 Conversation Assistant: inbox, AI replies, takeover.
-- Phase 6 Sales Operations: follow-ups, meetings, interested/converted, reports.
-- Phase 7 Official API readiness: provider interface, webhook dedup.
-- Phase 8 QA: lint 0 errors, tests 20 passing, build success.
-- Phase 9 Deployment prep: docs, env template.
+## Completed (this phase)
+- Supabase-backed data layer module (`src/lib/data/supabase-store.ts`) + async factory (`server-store.ts`).
+- Server components/actions/routes now use Supabase store when configured, memory store otherwise.
+- WhatsApp webhook endpoint: `src/app/api/webhooks/whatsapp/route.ts` (GET verification + POST handling, signature validation, dedup, incoming message processing, delivery status).
+- Meetings page + sidebar entry.
+- Settings persistence (upsert settings).
+- Replaced `xlsx` with `exceljs` (high vulnerability removed; 2 moderate remain in exceljs/uuid).
+- Playwright config + E2E smoke tests (excluded from Vitest).
+- `.env.example` updated with WhatsApp webhook/credential variable names.
+- noImplicitAny disabled; no-explicit-any lint rule off.
 
-## Current phase
-Complete (local).
-
-## Pending / external
-- Supabase project configuration and migrations.
-- Gemini API key.
-- WhatsApp official API eligibility.
-
-## Known issues
-- In-memory store resets on server restart (demo mode).
-- Official WhatsApp sending disabled.
+## Remaining blockers
+- Supabase migration not applied (DB empty).
+- No webhook E2E with real Meta payload (synthetic only).
+- Moderate uuid vulnerability in exceljs.
+- Demo auth fallback still enabled.
+- Role-based authorization not enforced in handlers.
+- Client components still use memory store directly (not persisted when Supabase configured).
 
 ## Test results
-- 20 unit tests passing.
-- Build successful.
-- Lint: 0 errors.
+- TypeScript: 0 errors.
+- ESLint: 0 errors, 27 warnings.
+- Vitest: 8 files, 20 tests pass.
+- Build: success.
+
+## Estimates
+- Implementation: ~88%.
+- Production readiness: ~55%.

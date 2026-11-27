@@ -1,9 +1,9 @@
-import { getStore } from "@/lib/data/store";
+import { getServerStore as getStore } from "@/lib/data/server-store";
 import { Card, CardContent } from "@/components/ui/card";
 
-export default function ActivityLogsPage() {
-  const store = getStore();
-  const logs = store.listActivityLogs(200);
+export default async function ActivityLogsPage() {
+  const store = await getStore();
+  const logs = await store.listActivityLogs(200);
   return (
     <div className="space-y-4">
       <h2 className="text-2xl font-semibold">Activity Logs</h2>
@@ -11,7 +11,7 @@ export default function ActivityLogsPage() {
         <table className="w-full text-sm">
           <thead className="border-b bg-muted/50"><tr><th className="p-3 text-left">Time</th><th className="p-3 text-left">Action</th><th className="p-3 text-left">Entity</th><th className="p-3 text-left">ID</th><th className="p-3 text-left">Metadata</th></tr></thead>
           <tbody>
-            {logs.map((l) => (
+            {logs.map((l: any) => (
               <tr key={l.id} className="border-b">
                 <td className="p-3 text-xs">{new Date(l.created_at).toLocaleString()}</td>
                 <td className="p-3">{l.action}</td>
@@ -27,3 +27,11 @@ export default function ActivityLogsPage() {
     </div>
   );
 }
+
+
+
+
+
+
+
+

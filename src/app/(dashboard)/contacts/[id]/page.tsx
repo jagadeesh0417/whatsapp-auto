@@ -1,4 +1,4 @@
-import { getStore } from "@/lib/data/store";
+import { getServerStore as getStore } from "@/lib/data/server-store";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -7,13 +7,13 @@ import { archiveBusinessAction } from "../actions";
 
 export default async function ContactDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const store = getStore();
-  const b = store.getBusiness(id);
+  const store = await getStore();
+  const b = await store.getBusiness(id);
   if (!b) return <div className="text-muted-foreground">Contact not found.</div>;
-  const consent = store.getConsent(id);
-  const analysis = store.getAnalysis(id);
-  const pipeline = store.getPipeline(id);
-  const conv = store.getConversationByBusiness(id);
+  const consent = await store.getConsent(id);
+  const analysis = await store.getAnalysis(id);
+  const pipeline = await store.getPipeline(id);
+  const conv = await store.getConversationByBusiness(id);
 
   return (
     <div className="space-y-4">
@@ -83,4 +83,10 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
     </div>
   );
 }
+
+
+
+
+
+
 

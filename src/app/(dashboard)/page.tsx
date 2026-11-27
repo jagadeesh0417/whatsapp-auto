@@ -1,27 +1,30 @@
-import { getStore } from "@/lib/data/store";
+import { getServerStore as getStore } from "@/lib/data/server-store";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
-export default function OverviewPage() {
-  const store = getStore();
-  const businesses = store.listBusinesses();
+export default async function OverviewPage() {
+  const store = await getStore();
+  const businesses = await store.listBusinesses();
   const eligible = businesses.filter((b) => b.pipeline_status === "eligible").length;
+  const consentMap = new Map();
+  for (const b of businesses) consentMap.set(b.id, await store.getConsent(b.id));
   const consentPending = businesses.filter((b) => {
-    const c = store.getConsent(b.id);
+    const c = consentMap.get(b.id);
     return !c || c.consent_status === "pending";
   }).length;
-  const queue = store.listMessageQueue("pending").length;
-  const sent = store.listMessageQueue("sent").length + store.listMessageQueue("approved").length;
-  const conversations = store.listConversations();
-  const replies = store.messages.filter((m) => m.direction === "inbound").length;
+  const queue = await store.listMessageQueue("pending").length;
+  const sent = (await store.listMessageQueue("sent")).length + (await store.listMessageQueue("approved")).length;
+  const conversations = await store.listConversations();
+  const allMsgs = store.messages || [];
+  const replies = allMsgs.filter((m: any) => m.direction === "inbound").length;
   const interested = businesses.filter((b) => b.pipeline_status === "interested").length;
-  const followUpsDue = store.listFollowUps("pending").filter((f) => new Date(f.due_at) <= new Date()).length;
-  const meetings = store.listMeetings().filter((m) => m.status === "scheduled").length;
+  const followUpsDue = await store.listFollowUps("pending").filter((f) => new Date(f.due_at) <= new Date()).length;
+  const meetings = await store.listMeetings().filter((m) => m.status === "scheduled").length;
   const converted = businesses.filter((b) => b.pipeline_status === "converted").length;
   const conversionRate = businesses.length ? Math.round((converted / businesses.length) * 100) : 0;
   const revenue = store.pipelines.reduce((s, p) => s + (p.actual_value || 0), 0);
-  const aiUsage = store.listAIUsage().length;
+  const aiUsage = await store.listAIUsage().length;
 
   const metrics = [
     { label: "Total businesses", value: businesses.length },
@@ -87,4 +90,10 @@ export default function OverviewPage() {
     </div>
   );
 }
+
+
+
+
+
+
 

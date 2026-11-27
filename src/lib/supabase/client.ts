@@ -8,3 +8,5 @@ export function createClient() {
     env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
   );
 }
+
+

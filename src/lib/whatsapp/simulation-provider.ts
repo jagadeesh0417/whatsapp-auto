@@ -11,3 +11,5 @@ export class SimulationWhatsAppProvider implements WhatsAppProvider {
     return `https://wa.me/${phone.replace(/\D/g, "")}?text=${encodeURIComponent(text)}`;
   }
 }
+
+

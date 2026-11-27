@@ -54,3 +54,5 @@ export const normalizeBusinessInput = (data: z.infer<typeof businessSchema>) => 
   ...data,
   normalized_phone_number: data.phone_number ? normalizePhone(data.phone_number).replace(/\D/g, "") : undefined,
 });
+
+

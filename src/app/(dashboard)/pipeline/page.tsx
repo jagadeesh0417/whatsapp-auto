@@ -1,13 +1,14 @@
-import { getStore } from "@/lib/data/store";
+import { getServerStore as getStore } from "@/lib/data/server-store";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 
 const stages = ["new_lead","consent_pending","eligible","message_prepared","awaiting_approval","contacted","replied","interested","follow_up_required","meeting_scheduled","proposal_sent","negotiation","converted","not_interested","opted_out","archived"];
 
-export default function PipelinePage() {
-  const store = getStore();
-  const businesses = store.listBusinesses();
+export default async function PipelinePage() {
+  const store = await getStore();
+  const businesses = await store.listBusinesses();
+  const pipelines = await store.listPipelines();
 
   return (
     <div className="space-y-4">
@@ -40,10 +41,10 @@ export default function PipelinePage() {
                 <tr key={b.id} className="border-b">
                   <td className="p-2">{b.business_name}</td>
                   <td className="p-2"><Badge variant="secondary">{b.pipeline_status}</Badge></td>
-                  <td className="p-2">₹{(store.getPipeline(b.id)?.estimated_value || 0).toLocaleString()}</td>
+                  <td className="p-2">₹{(pipelines.find((p) => p.business_id === b.id)?.estimated_value || 0).toLocaleString()}</td>
                   <td className="p-2">{b.assigned_to || "—"}</td>
                   <td className="p-2">
-                    <form className="flex gap-1" action={async (fd) => { "use server"; const stage = String(fd.get("stage")); getStore().updateBusiness(b.id, { pipeline_status: stage as never }); }}>
+                    <form className="flex gap-1" action={async (fd) => { "use server"; const stage = String(fd.get("stage")); (await getStore()).updateBusiness(b.id, { pipeline_status: stage as never }); }}>
                       <select name="stage" defaultValue={b.pipeline_status} className="border rounded px-1 py-0.5 text-xs bg-background">
                         {stages.map((s) => <option key={s} value={s}>{s}</option>)}
                       </select>
@@ -59,3 +60,9 @@ export default function PipelinePage() {
     </div>
   );
 }
+
+
+
+
+
+
