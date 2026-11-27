@@ -10,7 +10,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { knowledgeSchema } from "@/lib/validation/schemas";
-import { getStore } from "@/lib/data/store";
 
 export default function NewKnowledgePage() {
   const router = useRouter();
@@ -19,8 +18,7 @@ export default function NewKnowledgePage() {
 
   function onSubmit(values: z.infer<typeof knowledgeSchema>) {
     startTransition(async () => {
-      const store = getStore();
-      store.createKnowledgeBase({ ...values, organization_id: "org_demo_1", created_by: "user_demo_1" });
+      await fetch("/api/knowledge-base", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(values) });
       router.push("/knowledge-base");
       router.refresh();
     });

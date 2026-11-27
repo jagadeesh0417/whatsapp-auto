@@ -1,25 +1,29 @@
 "use client";
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { getStore } from "@/lib/data/store";
+import { useState, useEffect } from "react";
 
 export default function NewConversationPage() {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
-  const store = getStore();
-  const businesses = store.listBusinesses();
-  const [businessId, setBusinessId] = useState(businesses[0]?.id || "");
+  const [businesses, setBusinesses] = useState<any[]>([]);
+  const [businessId, setBusinessId] = useState("");
   const [provider, setProvider] = useState("simulation");
+
+  useEffect(() => {
+    fetch("/api/businesses").then((r) => r.json()).then((j) => {
+      setBusinesses(j.businesses || []);
+      if (j.businesses?.length) setBusinessId(j.businesses[0].id);
+    });
+  }, []);
 
   function create() {
     startTransition(async () => {
-      const b = store.getBusiness(businessId);
-      if (!b) return;
-      const c = store.createConversation({ organization_id: b.organization_id, business_id: b.id, provider: provider as "simulation" | "manual" | "official" });
-      router.push(`/conversations/${c.id}`);
+      const res = await fetch("/api/conversations", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ business_id: businessId, provider }) });
+      const j = await res.json();
+      if (j.conversation?.id) router.push(`/conversations/${j.conversation.id}`);
     });
   }
 

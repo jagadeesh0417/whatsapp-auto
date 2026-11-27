@@ -1,9 +1,12 @@
 -- AKRADHI CRM initial schema
 create extension if not exists "pgcrypto";
 
-create or replace function set_updated_at() returns trigger as $$
+create or replace function set_updated_at() returns trigger
+language plpgsql
+set search_path = public, pg_temp
+as $$
 begin new.updated_at = now(); return new; end;
-$$ language plpgsql;
+$$;
 
 -- organizations
 create table if not exists organizations (
@@ -26,14 +29,19 @@ create table if not exists profiles (
 );
 create trigger profiles_updated before update on profiles for each row execute function set_updated_at();
 
-create or replace function handle_new_user() returns trigger as $$
+create or replace function handle_new_user() returns trigger
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
 begin
   insert into public.profiles (id, full_name, email)
   values (new.id, coalesce(new.raw_user_meta_data->>'full_name', new.email), new.email)
   on conflict (id) do nothing;
   return new;
 end;
-$$ language plpgsql security definer;
+$$;
+revoke execute on function handle_new_user() from public;
 
 drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
@@ -49,6 +57,96 @@ create table if not exists organization_members (
   status text not null default 'active' check (status in ('active','invited','disabled')),
   unique (organization_id, user_id)
 );
+
+-- role escalation prevention
+create or replace function prevent_role_escalation() returns trigger
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  actor_role text;
+begin
+  select role into actor_role
+  from organization_members
+  where organization_id = new.organization_id and user_id = auth.uid() and status = 'active';
+
+  if new.role = 'owner' and actor_role is distinct from 'owner' then
+    raise exception 'Only owners can assign the owner role';
+  end if;
+  if actor_role = 'administrator' and new.role in ('owner','administrator') then
+    raise exception 'Administrators cannot assign owner or administrator roles';
+  end if;
+  if actor_role = 'sales_rep' and new.role in ('owner','administrator','sales_rep') then
+    raise exception 'Sales representatives cannot assign elevated roles';
+  end if;
+  if actor_role = 'viewer' then
+    raise exception 'Viewers cannot manage memberships';
+  end if;
+  -- prevent self role change except by owner
+  if TG_OP = 'UPDATE' and old.user_id = auth.uid() and old.role is distinct from new.role and actor_role is distinct from 'owner' then
+    raise exception 'Users cannot change their own role';
+  end if;
+  return new;
+end;
+$$;
+revoke execute on function prevent_role_escalation() from public;
+
+create trigger org_members_role_check before insert or update on organization_members
+  for each row execute function prevent_role_escalation();
+
+-- org consistency: assigned_to must be active member of same org
+create or replace function check_assigned_member() returns trigger
+language plpgsql
+set search_path = public, pg_temp
+as $$
+begin
+  if new.assigned_to is not null then
+    if not exists (
+      select 1 from organization_members
+      where organization_id = new.organization_id and user_id = new.assigned_to and status = 'active'
+    ) then
+      raise exception 'assigned_to must be an active member of the organization';
+    end if;
+  end if;
+  return new;
+end;
+$$;
+
+-- transactional organization onboarding
+create or replace function create_organization(org_name text, org_timezone text default 'Asia/Kolkata')
+returns uuid
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  new_org_id uuid;
+  uid uuid := auth.uid();
+begin
+  if uid is null then
+    raise exception 'Not authenticated';
+  end if;
+  insert into organizations (name, timezone) values (org_name, org_timezone) returning id into new_org_id;
+  insert into organization_members (organization_id, user_id, role, status)
+  values (new_org_id, uid, 'owner', 'active');
+  return new_org_id;
+end;
+$$;
+revoke execute on function create_organization(text, text) from public;
+grant execute on function create_organization(text, text) to authenticated;
+
+-- helper
+create or replace function user_org_ids() returns setof uuid
+language sql
+security definer
+stable
+set search_path = public, pg_temp
+as $$
+  select organization_id from organization_members where user_id = auth.uid() and status = 'active';
+$$;
+revoke execute on function user_org_ids() from public;
+grant execute on function user_org_ids() to authenticated;
 
 -- businesses
 create table if not exists businesses (
@@ -78,6 +176,7 @@ create unique index if not exists businesses_org_phone_unique on businesses (org
 create index if not exists businesses_org_idx on businesses (organization_id);
 create index if not exists businesses_pipeline_idx on businesses (organization_id, pipeline_status);
 create trigger businesses_updated before update on businesses for each row execute function set_updated_at();
+create trigger businesses_assigned_check before insert or update on businesses for each row execute function check_assigned_member();
 
 -- consent_records
 create table if not exists consent_records (
@@ -320,26 +419,72 @@ alter table ai_usage_logs enable row level security;
 alter table settings enable row level security;
 
 -- Helper
-create or replace function user_org_ids() returns setof uuid as $$
+create or replace function user_org_ids() returns setof uuid
+language sql
+security definer
+stable
+set search_path = public, pg_temp
+as $$
   select organization_id from organization_members where user_id = auth.uid() and status = 'active';
-$$ language sql security definer stable;
+$$;
+revoke execute on function user_org_ids() from public;
+grant execute on function user_org_ids() to authenticated;
 
--- Policies
-do $$ declare t text; begin
+-- Role check helper
+create or replace function user_role(org_id uuid) returns text
+language sql
+security definer
+stable
+set search_path = public, pg_temp
+as $$
+  select role from organization_members where organization_id = org_id and user_id = auth.uid() and status = 'active' limit 1;
+$$;
+revoke execute on function user_role(uuid) from public;
+grant execute on function user_role(uuid) to authenticated;
+
+-- Policies: organizations
+create policy organizations_select on organizations for select using (id in (select user_org_ids()));
+create policy organizations_insert on organizations for insert with check (auth.uid() is not null);
+create policy organizations_update on organizations for update using (id in (select user_org_ids()) and user_role(id) in ('owner','administrator')) with check (id in (select user_org_ids()));
+create policy organizations_delete on organizations for delete using (id in (select user_org_ids()) and user_role(id) = 'owner');
+
+-- profiles
+create policy profiles_select on profiles for select using (id = auth.uid() or id in (select user_id from organization_members where organization_id in (select user_org_ids())));
+create policy profiles_insert on profiles for insert with check (id = auth.uid());
+create policy profiles_update on profiles for update using (id = auth.uid()) with check (id = auth.uid());
+create policy profiles_delete on profiles for delete using (id = auth.uid());
+
+-- organization_members
+create policy org_members_select on organization_members for select using (user_id = auth.uid() or organization_id in (select user_org_ids()));
+create policy org_members_insert on organization_members for insert with check (
+  auth.uid() is not null
+  and (user_role(organization_id) in ('owner','administrator') or not exists (select 1 from organization_members where organization_id = organization_members.organization_id))
+);
+create policy org_members_update on organization_members for update using (
+  organization_id in (select user_org_ids()) and user_role(organization_id) in ('owner','administrator')
+) with check (
+  organization_id in (select user_org_ids()) and user_role(organization_id) in ('owner','administrator')
+);
+create policy org_members_delete on organization_members for delete using (
+  organization_id in (select user_org_ids()) and user_role(organization_id) in ('owner','administrator')
+);
+
+-- Generic data tables: SELECT for all members, INSERT/UPDATE for owner/admin/sales_rep, DELETE for owner/admin
+do $$
+declare t text;
+begin
   for t in select unnest(array['businesses','consent_records','business_analyses','daily_leads','conversations','messages','message_queue','follow_ups','knowledge_base','sales_pipeline','pipeline_history','meetings','activity_logs','settings']) loop
-    execute format('create policy %I_org on %I for all using (organization_id in (select user_org_ids())) with check (organization_id in (select user_org_ids()))', t, t);
+    execute format('create policy %I_select on %I for select using (organization_id in (select user_org_ids()))', t, t);
+    execute format('create policy %I_insert on %I for insert with check (organization_id in (select user_org_ids()) and user_role(organization_id) in (''owner'',''administrator'',''sales_rep''))', t, t);
+    execute format('create policy %I_update on %I for update using (organization_id in (select user_org_ids()) and user_role(organization_id) in (''owner'',''administrator'',''sales_rep'')) with check (organization_id in (select user_org_ids()))', t, t);
+    execute format('create policy %I_delete on %I for delete using (organization_id in (select user_org_ids()) and user_role(organization_id) in (''owner'',''administrator''))', t, t);
   end loop;
 end $$;
 
-create policy organizations_select on organizations for select using (id in (select user_org_ids()));
-create policy organizations_insert on organizations for insert with check (auth.uid() is not null);
-create policy organizations_update on organizations for update using (id in (select user_org_ids())) with check (id in (select user_org_ids()));
+-- webhook_events: service role handles writes; authenticated read only for their org (or null stays service-role only)
+create policy webhook_events_select on webhook_events for select using (organization_id is null and false or organization_id in (select user_org_ids()));
+-- (no insert/update/delete policies for authenticated => only service role)
 
-create policy profiles_self on profiles for all using (id = auth.uid()) with check (id = auth.uid());
-
-create policy org_members_select on organization_members for select using (user_id = auth.uid() or organization_id in (select user_org_ids()));
-create policy org_members_insert on organization_members for insert with check (auth.uid() is not null);
-create policy org_members_update on organization_members for update using (organization_id in (select user_org_ids())) with check (organization_id in (select user_org_ids()));
-
-create policy webhook_events_org on webhook_events for all using (organization_id is null or organization_id in (select user_org_ids()));
-create policy ai_usage_org on ai_usage_logs for all using (organization_id is null or organization_id in (select user_org_ids()));
+-- ai_usage_logs: read for org members; insert for sales_rep+; no update/delete
+create policy ai_usage_select on ai_usage_logs for select using (organization_id is null and false or organization_id in (select user_org_ids()));
+create policy ai_usage_insert on ai_usage_logs for insert with check (organization_id in (select user_org_ids()) and user_role(organization_id) in ('owner','administrator','sales_rep'));

@@ -1,6 +1,5 @@
 "use client";
-import { useState } from "react";
-import { getStore } from "@/lib/data/store";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -9,12 +8,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 interface AIResult { detected_intent: string; suggested_reply: string; conversation_summary: string; customer_requirements: string[]; suggested_pipeline_status: string; confidence: number; knowledge_refs: string[]; escalation_required: boolean; escalation_reason?: string; suggested_next_action: string; }
 
 export default function AssistantPage() {
-  const store = getStore();
-  const businesses = store.listBusinesses();
-  const [businessId, setBusinessId] = useState(businesses[0]?.id || "");
+  const [businesses, setBusinesses] = useState<any[]>([]);
+  const [businessId, setBusinessId] = useState("");
   const [message, setMessage] = useState("");
   const [result, setResult] = useState<AIResult | null>(null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/businesses").then((r) => r.json()).then((j) => {
+      setBusinesses(j.businesses || []);
+      if (j.businesses?.length) setBusinessId(j.businesses[0].id);
+    });
+  }, []);
 
   async function ask() {
     setLoading(true);

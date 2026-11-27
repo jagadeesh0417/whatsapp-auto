@@ -1,0 +1,7 @@
+-- Database-level security tests (run manually in Supabase SQL editor as different users)
+-- 1. Unauthorized membership creation: as authenticated user A, attempt insert into organization_members for org they don't belong to -> should fail RLS.
+-- 2. Role escalation: as sales_rep, attempt update organization_members set role='owner' -> should fail trigger.
+-- 3. Viewer write attempt: as viewer, attempt insert into businesses -> should fail RLS.
+-- 4. Cross-organization access: as user in org A, select businesses where org = org B -> should return 0 rows.
+-- 5. Onboarding: select create_organization('Test Org') as authenticated user -> should create org + owner membership.
+-- 6. Assigned member consistency: insert business with assigned_to not in org members -> should fail trigger.

@@ -1,24 +1,28 @@
 "use client";
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { getStore } from "@/lib/data/store";
-
+import { useState, useEffect } from "react";
 export function CreateFollowUpForm() {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
-  const store = getStore();
-  const businesses = store.listBusinesses();
-  const [businessId, setBusinessId] = useState(businesses[0]?.id || "");
+  const [businesses, setBusinesses] = useState<any[]>([]);
+  const [businessId, setBusinessId] = useState("");
   const [due, setDue] = useState("");
   const [reason, setReason] = useState("");
 
+  useEffect(() => {
+    fetch("/api/businesses").then((r) => r.json()).then((j) => {
+      setBusinesses(j.businesses || []);
+      if (j.businesses?.length) setBusinessId(j.businesses[0].id);
+    });
+  }, []);
+
   function create() {
     startTransition(async () => {
-      store.createFollowUp({ organization_id: store.getBusiness(businessId)?.organization_id, business_id: businessId, due_at: due || new Date(Date.now() + 86400000).toISOString(), reason: reason || "Follow up" });
+      await fetch("/api/follow-ups", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ business_id: businessId, due_at: due || new Date(Date.now() + 86400000).toISOString(), reason: reason || "Follow up" }) });
       router.refresh();
     });
   }

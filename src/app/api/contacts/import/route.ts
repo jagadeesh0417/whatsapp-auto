@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { getServerStore as getStore } from "@/lib/data/server-store";
 import { normalizePhone } from "@/lib/security/phone";
-import { getCurrentUser } from "@/lib/auth/session";
+import { requireMinRole } from "@/lib/auth/rbac";
 
 export async function POST(req: Request) {
-  const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  let user;
+  try { user = await requireMinRole("sales_rep"); } catch { return NextResponse.json({ error: "Unauthorized" }, { status: 401 }); }
   let body: { rows?: Record<string, string>[] };
   try { body = await req.json(); } catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }); }
   const rows = body.rows || [];

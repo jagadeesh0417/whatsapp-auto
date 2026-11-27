@@ -1,16 +1,19 @@
 "use client";
-import { useState } from "react";
-import { getStore } from "@/lib/data/store";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import ExcelJS from "exceljs";
 
 export default function ReportsPage() {
-  const store = getStore();
+  const [summary, setSummary] = useState<any>(null);
   const [range, setRange] = useState("30");
 
+  useEffect(() => {
+    fetch("/api/reports/summary").then((r) => r.json()).then(setSummary);
+  }, []);
+
   async function exportCSV() {
-    const businesses = store.listBusinesses();
+    const businesses = summary?.businesses || [];
     const rows = businesses.map((b: any) => ({
       business_name: b.business_name,
       contact_person: b.contact_person || "",
@@ -21,7 +24,6 @@ export default function ReportsPage() {
       pipeline_status: b.pipeline_status,
       lead_score: b.lead_score,
     }));
-    // prevent formula injection: prefix dangerous chars
     const safe = rows.map((r: any) => {
       const out: Record<string, string> = {};
       for (const k in r) {
@@ -46,7 +48,7 @@ export default function ReportsPage() {
   }
 
   async function exportXLSX() {
-    const businesses = store.listBusinesses();
+    const businesses = summary?.businesses || [];
     const rows = businesses.map((b: any) => ({
       business_name: b.business_name,
       contact_person: b.contact_person || "",
@@ -70,10 +72,6 @@ export default function ReportsPage() {
     URL.revokeObjectURL(url);
   }
 
-  const businesses = store.listBusinesses();
-  const converted = businesses.filter((b: any) => b.pipeline_status === "converted").length;
-  const conversionRate = businesses.length ? Math.round((converted / businesses.length) * 100) : 0;
-
   return (
     <div className="space-y-4">
       <h2 className="text-2xl font-semibold">Reports</h2>
@@ -87,13 +85,12 @@ export default function ReportsPage() {
       <Card>
         <CardHeader><CardTitle className="text-base">Summary</CardTitle></CardHeader>
         <CardContent className="text-sm space-y-1">
-          <div>Total businesses: {businesses.length}</div>
-          <div>Converted: {converted}</div>
-          <div>Conversion rate: {conversionRate}%</div>
-          <div>Conversations: {store.listConversations().length}</div>
-          <div>Messages: {store.messages.length}</div>
-          <div>Follow-ups pending: {store.listFollowUps("pending").length}</div>
-          <div>AI usage calls: {store.listAIUsage().length}</div>
+          <div>Total businesses: {summary?.total ?? 0}</div>
+          <div>Converted: {summary?.converted ?? 0}</div>
+          <div>Conversion rate: {summary?.conversionRate ?? 0}%</div>
+          <div>Conversations: {summary?.conversations ?? 0}</div>
+          <div>Follow-ups pending: {summary?.followUpsPending ?? 0}</div>
+          <div>AI usage calls: {summary?.aiUsage ?? 0}</div>
         </CardContent>
       </Card>
     </div>

@@ -4,11 +4,11 @@ import { getServerStore as getStore } from "@/lib/data/server-store";
 import { businessSchema, normalizeBusinessInput } from "@/lib/validation/schemas";
 import { normalizePhone } from "@/lib/security/phone";
 import { getCurrentUser } from "@/lib/auth/session";
+import { requireMinRole } from "@/lib/auth/rbac";
 import { revalidatePath } from "next/cache";
 
 export async function createBusinessAction(formData: FormData) {
-  const user = await getCurrentUser();
-  if (!user) throw new Error("Unauthorized");
+  const user = await requireMinRole("sales_rep");
   const raw = Object.fromEntries(formData.entries());
   const parsed = businessSchema.safeParse(raw);
   if (!parsed.success) throw new Error(parsed.error.message);
@@ -24,8 +24,7 @@ export async function createBusinessAction(formData: FormData) {
 }
 
 export async function updateBusinessAction(id: string, formData: FormData) {
-  const user = await getCurrentUser();
-  if (!user) throw new Error("Unauthorized");
+  const user = await requireMinRole("sales_rep");
   const raw = Object.fromEntries(formData.entries());
   const parsed = businessSchema.safeParse(raw);
   if (!parsed.success) throw new Error(parsed.error.message);
@@ -38,8 +37,7 @@ export async function updateBusinessAction(id: string, formData: FormData) {
 }
 
 export async function archiveBusinessAction(id: string) {
-  const user = await getCurrentUser();
-  if (!user) throw new Error("Unauthorized");
+  const user = await requireMinRole("administrator");
   const store = await getStore();
   await store.archiveBusiness(id);
   await store.logActivity("archive_business", "business", id, {}, user.id);
@@ -47,8 +45,7 @@ export async function archiveBusinessAction(id: string) {
 }
 
 export async function updateConsentAction(formData: FormData) {
-  const user = await getCurrentUser();
-  if (!user) throw new Error("Unauthorized");
+  const user = await requireMinRole("sales_rep");
   const business_id = String(formData.get("business_id"));
   const consent_status = String(formData.get("consent_status")) as "granted" | "pending" | "denied" | "revoked";
   const store = await getStore();
@@ -58,8 +55,7 @@ export async function updateConsentAction(formData: FormData) {
 }
 
 export async function revokeConsentAction(business_id: string) {
-  const user = await getCurrentUser();
-  if (!user) throw new Error("Unauthorized");
+  const user = await requireMinRole("sales_rep");
   const store = await getStore();
   await store.revokeConsent(business_id);
   await store.logActivity("revoke_consent", "consent", business_id, {}, user.id);
