@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { getServerStore as getStore } from "@/lib/data/server-store";
 import { getAIProvider } from "@/lib/ai/provider";
-import { getCurrentUser } from "@/lib/auth/session";
+import { requireMinRole } from "@/lib/auth/rbac";
 
 export async function POST(req: Request) {
-  const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  let user;
+  try { user = await requireMinRole("sales_rep"); } catch { return NextResponse.json({ error: "Unauthorized" }, { status: 401 }); }
   const body = await req.json().catch(() => ({}));
   const store = await getStore();
   const business = await store.getBusiness(String(body.business_id));
@@ -19,6 +19,7 @@ export async function POST(req: Request) {
   await store.logAIUsage({ organization_id: user.organization_id, operation: "assistant", model: (result as { model?: string }).model || "gemini", status: "success" });
   return NextResponse.json({ result });
 }
+
 
 
 
