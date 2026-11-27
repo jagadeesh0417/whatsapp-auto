@@ -22,14 +22,14 @@ export class GeminiAIProvider implements AIProvider {
   }
 
   async generateDraft(messageType: string, context: AIContext): Promise<AIDraftResult> {
-    const kb = (context.knowledge || []).map((k) => `- ${k.title}: ${k.content}`).join("\n");
+    const kb = (context.knowledge || []).map((k: any) => `- ${k.title}: ${k.content}`).join("\n");
     const prompt = `You are an assistant for AKRADHI, a website development agency. Draft a concise WhatsApp message (max 300 chars) for message type: ${messageType}. Business: ${JSON.stringify(context.business || {})}. Knowledge:\n${kb}\nLanguage: ${context.language || "en"}. Return only the message text, no quotes.`;
     const content = await this.call(prompt);
-    return { content: content.trim(), language: context.language || "en", knowledge_refs: (context.knowledge || []).map((k) => k.title), model: this.model() };
+    return { content: content.trim(), language: context.language || "en", knowledge_refs: (context.knowledge || []).map((k: any) => k.title), model: this.model() };
   }
 
   async generateReply(incomingMessage: string, context: AIContext): Promise<AIReplyResult> {
-    const kb = (context.knowledge || []).map((k) => `- ${k.title}: ${k.content}`).join("\n");
+    const kb = (context.knowledge || []).map((k: any) => `- ${k.title}: ${k.content}`).join("\n");
     const prompt = `You are AKRADHI sales assistant. Incoming customer message: "${incomingMessage}". Context business: ${JSON.stringify(context.business || {})}. Pipeline: ${context.pipelineStage}. Knowledge:\n${kb}\nReturn strict JSON with keys: detected_intent (string), suggested_reply (string, max 400 chars), conversation_summary (string), customer_requirements (string array), suggested_pipeline_status (string), confidence (number 0-1), knowledge_refs (string array), escalation_required (boolean), escalation_reason (string or null), suggested_next_action (string).`;
     const text = await this.call(prompt);
     let parsed: Partial<AIReplyResult> = {};

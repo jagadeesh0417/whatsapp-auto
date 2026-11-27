@@ -11,7 +11,7 @@ export default function ReportsPage() {
 
   async function exportCSV() {
     const businesses = store.listBusinesses();
-    const rows = businesses.map((b) => ({
+    const rows = businesses.map((b: any) => ({
       business_name: b.business_name,
       contact_person: b.contact_person || "",
       phone_number: b.phone_number || "",
@@ -22,7 +22,7 @@ export default function ReportsPage() {
       lead_score: b.lead_score,
     }));
     // prevent formula injection: prefix dangerous chars
-    const safe = rows.map((r) => {
+    const safe = rows.map((r: any) => {
       const out: Record<string, string> = {};
       for (const k in r) {
         let v = String((r as Record<string, unknown>)[k]);
@@ -34,8 +34,8 @@ export default function ReportsPage() {
     const wb = new ExcelJS.Workbook();
     const ws = wb.addWorksheet("Contacts");
     if (safe.length) {
-      ws.columns = Object.keys(safe[0]).map((k) => ({ header: k, key: k }));
-      safe.forEach((r) => ws.addRow(r));
+      ws.columns = Object.keys(safe[0]).map((k: any) => ({ header: k, key: k }));
+      safe.forEach((r: any) => ws.addRow(r));
     }
     const buf = await wb.csv.writeBuffer();
     const blob = new Blob([buf], { type: "text/csv" });
@@ -47,7 +47,7 @@ export default function ReportsPage() {
 
   async function exportXLSX() {
     const businesses = store.listBusinesses();
-    const rows = businesses.map((b) => ({
+    const rows = businesses.map((b: any) => ({
       business_name: b.business_name,
       contact_person: b.contact_person || "",
       phone_number: b.phone_number || "",
@@ -59,8 +59,8 @@ export default function ReportsPage() {
     const wb = new ExcelJS.Workbook();
     const ws = wb.addWorksheet("Contacts");
     if (rows.length) {
-      ws.columns = Object.keys(rows[0]).map((k) => ({ header: k, key: k }));
-      rows.forEach((r) => ws.addRow(r));
+      ws.columns = Object.keys(rows[0]).map((k: any) => ({ header: k, key: k }));
+      rows.forEach((r: any) => ws.addRow(r));
     }
     const buf = await wb.xlsx.writeBuffer();
     const blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
@@ -71,7 +71,7 @@ export default function ReportsPage() {
   }
 
   const businesses = store.listBusinesses();
-  const converted = businesses.filter((b) => b.pipeline_status === "converted").length;
+  const converted = businesses.filter((b: any) => b.pipeline_status === "converted").length;
   const conversionRate = businesses.length ? Math.round((converted / businesses.length) * 100) : 0;
 
   return (

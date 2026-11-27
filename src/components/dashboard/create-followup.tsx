@@ -28,7 +28,7 @@ export function CreateFollowUpForm() {
       <CardHeader><CardTitle className="text-base">Create follow-up</CardTitle></CardHeader>
       <CardContent className="space-y-3">
         <select value={businessId} onChange={(e) => setBusinessId(e.target.value)} className="border rounded px-2 py-1 text-sm bg-background w-full">
-          {businesses.map((b) => <option key={b.id} value={b.id}>{b.business_name}</option>)}
+          {businesses.map((b: any) => <option key={b.id} value={b.id}>{b.business_name}</option>)}
         </select>
         <Input type="datetime-local" value={due} onChange={(e) => setDue(e.target.value)} />
         <Input placeholder="Reason" value={reason} onChange={(e) => setReason(e.target.value)} />

@@ -15,7 +15,7 @@ create table if not exists organizations (
 );
 create trigger organizations_updated before update on organizations for each row execute function set_updated_at();
 
--- profiles
+-- profiles (auto-created on signup via trigger)
 create table if not exists profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   full_name text,
@@ -25,6 +25,20 @@ create table if not exists profiles (
   updated_at timestamptz not null default now()
 );
 create trigger profiles_updated before update on profiles for each row execute function set_updated_at();
+
+create or replace function handle_new_user() returns trigger as $$
+begin
+  insert into public.profiles (id, full_name, email)
+  values (new.id, coalesce(new.raw_user_meta_data->>'full_name', new.email), new.email)
+  on conflict (id) do nothing;
+  return new;
+end;
+$$ language plpgsql security definer;
+
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute function handle_new_user();
 
 -- organization_members
 create table if not exists organization_members (
@@ -52,7 +66,7 @@ create table if not exists businesses (
   website_url text,
   source text,
   notes text,
-  pipeline_status text not null default 'new_lead',
+  pipeline_status text not null default 'new_lead' check (pipeline_status in ('new_lead','consent_pending','eligible','message_prepared','awaiting_approval','contacted','replied','interested','follow_up_required','meeting_scheduled','proposal_sent','negotiation','converted','not_interested','opted_out','archived')),
   lead_score integer not null default 0,
   assigned_to uuid references profiles(id),
   last_contacted_at timestamptz,
@@ -77,7 +91,8 @@ create table if not exists consent_records (
   consent_timestamp timestamptz,
   evidence_reference text,
   revoked_at timestamptz,
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  unique (organization_id, business_id, communication_channel)
 );
 create index if not exists consent_org_idx on consent_records (organization_id);
 
@@ -249,7 +264,7 @@ create index if not exists activity_org_idx on activity_logs (organization_id, c
 -- webhook_events
 create table if not exists webhook_events (
   id uuid primary key default gen_random_uuid(),
-  organization_id uuid references organizations(id),
+  organization_id uuid references organizations(id) on delete cascade,
   provider text not null,
   external_event_id text not null,
   event_type text not null,
@@ -262,7 +277,7 @@ create table if not exists webhook_events (
 -- ai_usage_logs
 create table if not exists ai_usage_logs (
   id uuid primary key default gen_random_uuid(),
-  organization_id uuid references organizations(id),
+  organization_id uuid references organizations(id) on delete cascade,
   operation text not null,
   model text not null,
   input_tokens integer not null default 0,
@@ -304,20 +319,27 @@ alter table webhook_events enable row level security;
 alter table ai_usage_logs enable row level security;
 alter table settings enable row level security;
 
--- Helper: current user's organization ids
+-- Helper
 create or replace function user_org_ids() returns setof uuid as $$
   select organization_id from organization_members where user_id = auth.uid() and status = 'active';
 $$ language sql security definer stable;
 
--- Policies (organization isolation)
+-- Policies
 do $$ declare t text; begin
   for t in select unnest(array['businesses','consent_records','business_analyses','daily_leads','conversations','messages','message_queue','follow_ups','knowledge_base','sales_pipeline','pipeline_history','meetings','activity_logs','settings']) loop
     execute format('create policy %I_org on %I for all using (organization_id in (select user_org_ids())) with check (organization_id in (select user_org_ids()))', t, t);
   end loop;
 end $$;
 
-create policy organizations_member on organizations for select using (id in (select user_org_ids()));
+create policy organizations_select on organizations for select using (id in (select user_org_ids()));
+create policy organizations_insert on organizations for insert with check (auth.uid() is not null);
+create policy organizations_update on organizations for update using (id in (select user_org_ids())) with check (id in (select user_org_ids()));
+
 create policy profiles_self on profiles for all using (id = auth.uid()) with check (id = auth.uid());
-create policy org_members_self on organization_members for select using (user_id = auth.uid() or organization_id in (select user_org_ids()));
+
+create policy org_members_select on organization_members for select using (user_id = auth.uid() or organization_id in (select user_org_ids()));
+create policy org_members_insert on organization_members for insert with check (auth.uid() is not null);
+create policy org_members_update on organization_members for update using (organization_id in (select user_org_ids())) with check (organization_id in (select user_org_ids()));
+
 create policy webhook_events_org on webhook_events for all using (organization_id is null or organization_id in (select user_org_ids()));
 create policy ai_usage_org on ai_usage_logs for all using (organization_id is null or organization_id in (select user_org_ids()));

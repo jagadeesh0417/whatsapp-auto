@@ -13,8 +13,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const body = await req.json().catch(() => ({}));
   const incoming = String(body.incoming_message || "");
   const business = await store.getBusiness(conv.business_id);
-  const history = (await store.listMessages(id)).map((m) => ({ role: m.direction === "inbound" ? "customer" : "agent", content: m.content }));
-  const kb = (await store.listKnowledgeBase(undefined, true)).map((k) => ({ title: k.title, content: k.content }));
+  const history = (await store.listMessages(id)).map((m: any) => ({ role: m.direction === "inbound" ? "customer" : "agent", content: m.content }));
+  const kb = (await store.listKnowledgeBase(undefined, true)).map((k: any) => ({ title: k.title, content: k.content }));
   const provider = getAIProvider();
   const result = await provider.generateReply(incoming, {
     business: business as unknown as Record<string, unknown>,

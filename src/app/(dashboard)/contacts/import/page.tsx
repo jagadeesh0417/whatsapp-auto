@@ -111,7 +111,7 @@ export default function ImportPage() {
           <CardContent>
             <div className="overflow-x-auto max-h-80">
               <table className="text-xs w-full">
-                <thead><tr>{Object.keys(rows[0]).map((k) => <th key={k} className="p-2 text-left border-b">{k}</th>)}</tr></thead>
+                <thead><tr>{Object.keys(rows[0]).map((k: any) => <th key={k} className="p-2 text-left border-b">{k}</th>)}</tr></thead>
                 <tbody>{rows.slice(0, 20).map((r, i) => <tr key={i}>{Object.values(r).map((v, j) => <td key={j} className="p-2 border-b">{String(v || "")}</td>)}</tr>)}</tbody>
               </table>
             </div>

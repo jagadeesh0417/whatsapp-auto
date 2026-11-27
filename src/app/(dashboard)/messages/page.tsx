@@ -9,7 +9,7 @@ export default async function MessagesPage({ searchParams }: { searchParams: Pro
   const store = await getStore();
   const items = await store.listMessageQueue();
   const businesses = await store.listBusinesses();
-  const businessById = new Map(businesses.map((b) => [b.id, b]));
+  const businessById = new Map(businesses.map((b: any) => [b.id, b]));
 
   async function generateDraft(formData: FormData) {
     "use server";
@@ -20,7 +20,7 @@ export default async function MessagesPage({ searchParams }: { searchParams: Pro
     if (!b) return;
     const { getAIProvider } = await import("@/lib/ai/provider");
     const provider = getAIProvider();
-    const kb = (await s.listKnowledgeBase(undefined, true)).map((k) => ({ title: k.title, content: k.content }));
+    const kb = (await s.listKnowledgeBase(undefined, true)).map((k: any) => ({ title: k.title, content: k.content }));
     const res = await provider.generateDraft(message_type, { business: b as unknown as Record<string, unknown>, knowledge: kb });
     await s.createMessageQueueItem({ organization_id: b.organization_id, business_id, message_type, generated_content: res.content, approval_status: "pending" });
     await s.logAIUsage({ organization_id: b.organization_id, operation: "draft_message", model: res.model, status: "success" });
@@ -40,7 +40,7 @@ export default async function MessagesPage({ searchParams }: { searchParams: Pro
     await s.logActivity("reject_message", "message_queue", id, {}, undefined);
   }
 
-  const rows = items.map((q) => ({ q, b: businessById.get(q.business_id) }));
+  const rows = items.map((q: any) => ({ q, b: businessById.get(q.business_id) }));
 
   return (
     <div className="space-y-4">
@@ -52,13 +52,13 @@ export default async function MessagesPage({ searchParams }: { searchParams: Pro
             <div>
               <label className="text-xs text-muted-foreground">Business</label>
               <select name="business_id" defaultValue={sp.business || businesses[0]?.id} className="border rounded px-2 py-1 text-sm bg-background">
-                {businesses.map((b) => <option key={b.id} value={b.id}>{b.business_name}</option>)}
+                {businesses.map((b: any) => <option key={b.id} value={b.id}>{b.business_name}</option>)}
               </select>
             </div>
             <div>
               <label className="text-xs text-muted-foreground">Type</label>
               <select name="message_type" className="border rounded px-2 py-1 text-sm bg-background">
-                {["introduction","service information","consultation request","follow-up","meeting confirmation","pricing information","portfolio sharing"].map((t) => <option key={t} value={t}>{t}</option>)}
+                {["introduction","service information","consultation request","follow-up","meeting confirmation","pricing information","portfolio sharing"].map((t: any) => <option key={t} value={t}>{t}</option>)}
               </select>
             </div>
             <Button type="submit">Generate</Button>
@@ -72,7 +72,7 @@ export default async function MessagesPage({ searchParams }: { searchParams: Pro
               <tr><th className="p-3 text-left">Business</th><th className="p-3 text-left">Type</th><th className="p-3 text-left">Status</th><th className="p-3 text-left">Content</th><th className="p-3 text-left">Actions</th></tr>
             </thead>
             <tbody>
-              {rows.map(({ q, b }) => (
+              {rows.map(({ q, b }: any) => (
                 <tr key={q.id} className="border-b align-top">
                   <td className="p-3 font-medium">{b?.business_name}</td>
                   <td className="p-3">{q.message_type}</td>

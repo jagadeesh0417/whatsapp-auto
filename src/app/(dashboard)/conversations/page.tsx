@@ -20,7 +20,7 @@ export default async function ConversationsPage() {
           <table className="w-full text-sm">
             <thead className="border-b bg-muted/50"><tr><th className="p-3 text-left">Business</th><th className="p-3 text-left">Provider</th><th className="p-3 text-left">Status</th><th className="p-3 text-left">AI</th><th className="p-3 text-left">Last message</th><th className="p-3"></th></tr></thead>
             <tbody>
-              {convs.map((c) => {
+              {convs.map((c: any) => {
                 const b = businessById.get(c.business_id);
                 return (
                   <tr key={c.id} className="border-b hover:bg-muted/30">

@@ -39,7 +39,7 @@ export default async function AnalysisPage({ searchParams }: { searchParams: Pro
     <div className="space-y-4">
       <h2 className="text-2xl font-semibold">Business Analysis</h2>
       <div className="flex gap-2 flex-wrap">
-        {businesses.map((b) => (
+        {businesses.map((b: any) => (
           <Link key={b.id} href={`/analysis?business=${b.id}`}>
             <Button variant={b.id === selectedId ? "default" : "outline"} size="sm">{b.business_name}</Button>
           </Link>

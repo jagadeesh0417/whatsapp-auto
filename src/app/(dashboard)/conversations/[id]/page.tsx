@@ -47,7 +47,7 @@ export default function ConversationDetailPage() {
   async function genAIReply() {
     setLoadingAI(true);
     try {
-      const res = await fetch(`/api/conversations/${id}/ai-reply`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ incoming_message: incoming || msgs.filter((m) => m.direction === "inbound").slice(-1)[0]?.content || "" }) });
+      const res = await fetch(`/api/conversations/${id}/ai-reply`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ incoming_message: incoming || msgs.filter((m: any) => m.direction === "inbound").slice(-1)[0]?.content || "" }) });
       const j = await res.json();
       setAiResult(j.result);
       if (j.result?.suggested_reply) setComposer(j.result.suggested_reply);
@@ -72,7 +72,7 @@ export default function ConversationDetailPage() {
           </div>
         </div>
         <div className="flex-1 overflow-y-auto p-4 space-y-3">
-          {msgs.map((m) => (
+          {msgs.map((m: any) => (
             <div key={m.id} className={`flex ${m.direction === "outbound" ? "justify-end" : "justify-start"}`}>
               <div className={`max-w-[70%] rounded-lg px-3 py-2 text-sm ${m.direction === "outbound" ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
                 <div>{m.content}</div>

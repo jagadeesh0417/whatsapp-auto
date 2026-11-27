@@ -31,7 +31,7 @@ export default function NewConversationPage() {
           <div>
             <label className="text-sm">Business</label>
             <select value={businessId} onChange={(e) => setBusinessId(e.target.value)} className="border rounded px-2 py-1 text-sm bg-background w-full">
-              {businesses.map((b) => <option key={b.id} value={b.id}>{b.business_name}</option>)}
+              {businesses.map((b: any) => <option key={b.id} value={b.id}>{b.business_name}</option>)}
             </select>
           </div>
           <div>

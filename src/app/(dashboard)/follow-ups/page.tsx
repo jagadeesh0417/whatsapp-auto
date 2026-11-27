@@ -19,7 +19,7 @@ export default async function FollowUpsPage() {
           <table className="w-full text-sm">
             <thead className="border-b bg-muted/50"><tr><th className="p-3 text-left">Business</th><th className="p-3 text-left">Due</th><th className="p-3 text-left">Reason</th><th className="p-3 text-left">Status</th><th className="p-3 text-left">Actions</th></tr></thead>
             <tbody>
-              {items.map((f) => {
+              {items.map((f: any) => {
                 const b = businessById.get(f.business_id);
                 return (
                   <tr key={f.id} className="border-b">

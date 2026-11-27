@@ -6,10 +6,10 @@ import Link from "next/link";
 export default async function OverviewPage() {
   const store = await getStore();
   const businesses = await store.listBusinesses();
-  const eligible = businesses.filter((b) => b.pipeline_status === "eligible").length;
+  const eligible = businesses.filter((b: any) => b.pipeline_status === "eligible").length;
   const consentMap = new Map();
   for (const b of businesses) consentMap.set(b.id, await store.getConsent(b.id));
-  const consentPending = businesses.filter((b) => {
+  const consentPending = businesses.filter((b: any) => {
     const c = consentMap.get(b.id);
     return !c || c.consent_status === "pending";
   }).length;
@@ -18,26 +18,26 @@ export default async function OverviewPage() {
   const conversations = await store.listConversations();
   const allMsgs = store.messages || [];
   const replies = allMsgs.filter((m: any) => m.direction === "inbound").length;
-  const interested = businesses.filter((b) => b.pipeline_status === "interested").length;
-  const followUpsDue = await store.listFollowUps("pending").filter((f) => new Date(f.due_at) <= new Date()).length;
-  const meetings = await store.listMeetings().filter((m) => m.status === "scheduled").length;
-  const converted = businesses.filter((b) => b.pipeline_status === "converted").length;
+  const interested = businesses.filter((b: any) => b.pipeline_status === "interested").length;
+  const followUpsDue = await store.listFollowUps("pending").filter((f: any) => new Date(f.due_at) <= new Date()).length;
+  const meetings = await store.listMeetings().filter((m: any) => m.status === "scheduled").length;
+  const converted = businesses.filter((b: any) => b.pipeline_status === "converted").length;
   const conversionRate = businesses.length ? Math.round((converted / businesses.length) * 100) : 0;
-  const revenue = store.pipelines.reduce((s, p) => s + (p.actual_value || 0), 0);
+  const revenue = store.pipelines.reduce((s: any, p: any) => s + (p.actual_value || 0), 0);
   const aiUsage = await store.listAIUsage().length;
 
   const metrics = [
     { label: "Total businesses", value: businesses.length },
     { label: "Eligible", value: eligible },
     { label: "Consent pending", value: consentPending },
-    { label: "Today's review queue", value: store.listDailyLeads().filter((d) => d.selection_date === new Date().toISOString().slice(0, 10)).length },
+    { label: "Today's review queue", value: store.listDailyLeads().filter((d: any) => d.selection_date === new Date().toISOString().slice(0, 10)).length },
     { label: "Messages awaiting approval", value: queue },
     { label: "Confirmed sent", value: sent },
     { label: "Customer replies", value: replies },
     { label: "Interested prospects", value: interested },
     { label: "Follow-ups due", value: followUpsDue },
     { label: "Meetings scheduled", value: meetings },
-    { label: "Proposals sent", value: businesses.filter((b) => b.pipeline_status === "proposal_sent").length },
+    { label: "Proposals sent", value: businesses.filter((b: any) => b.pipeline_status === "proposal_sent").length },
     { label: "Converted clients", value: converted },
     { label: "Conversion rate", value: `${conversionRate}%` },
     { label: "Confirmed revenue", value: `₹${revenue.toLocaleString()}` },
@@ -54,7 +54,7 @@ export default async function OverviewPage() {
         </div>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-        {metrics.map((m) => (
+        {metrics.map((m: any) => (
           <Card key={m.label}>
             <CardHeader className="pb-2"><CardTitle className="text-xs font-medium text-muted-foreground">{m.label}</CardTitle></CardHeader>
             <CardContent><div className="text-2xl font-bold">{m.value}</div></CardContent>
@@ -76,7 +76,7 @@ export default async function OverviewPage() {
           <CardHeader><CardTitle className="text-base">Recent activity</CardTitle></CardHeader>
           <CardContent>
             <ul className="space-y-2 text-sm">
-              {store.listActivityLogs(8).map((a) => (
+              {store.listActivityLogs(8).map((a: any) => (
                 <li key={a.id} className="flex justify-between text-muted-foreground">
                   <span>{a.action} · {a.entity_type}</span>
                   <span className="text-xs">{new Date(a.created_at).toLocaleString()}</span>

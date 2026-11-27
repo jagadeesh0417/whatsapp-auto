@@ -25,7 +25,7 @@ export default async function ContactsPage({ searchParams }: { searchParams: Pro
         <Input name="q" placeholder="Search name, phone, category, city" defaultValue={sp.q} className="max-w-xs" />
         <select name="status" defaultValue={sp.status || ""} className="border rounded px-2 py-1 text-sm bg-background">
           <option value="">All statuses</option>
-          {["new_lead","consent_pending","eligible","message_prepared","awaiting_approval","contacted","replied","interested","follow_up_required","meeting_scheduled","proposal_sent","negotiation","converted","not_interested","opted_out","archived"].map((s) => <option key={s} value={s}>{s}</option>)}
+          {["new_lead","consent_pending","eligible","message_prepared","awaiting_approval","contacted","replied","interested","follow_up_required","meeting_scheduled","proposal_sent","negotiation","converted","not_interested","opted_out","archived"].map((s: any) => <option key={s} value={s}>{s}</option>)}
         </select>
         <Button type="submit" size="sm" variant="outline">Filter</Button>
       </form>

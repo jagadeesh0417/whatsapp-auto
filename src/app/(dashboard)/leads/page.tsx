@@ -22,7 +22,7 @@ export default async function LeadsPage() {
     consentByBiz.set(b.id, c?.consent_status);
   }
   const businessById = new Map<any, any>(businesses.map((b: any) => [b.id, b]));
-  const queueRows = queue.map((dl) => {
+  const queueRows = queue.map((dl: any) => {
     const b = businessById.get(dl.business_id);
     return { dl, b, e: b ? eligibleSync(b, consentByBiz.get(b.id)) : { ok: false, reason: "Missing business" } };
   });
@@ -31,7 +31,7 @@ export default async function LeadsPage() {
     "use server";
     const s = await getStore();
     const today2 = new Date().toISOString().slice(0, 10);
-    const existing = (await s.listDailyLeads(today2)).map((d) => d.business_id);
+    const existing = (await s.listDailyLeads(today2)).map((d: any) => d.business_id);
     const bs = await s.listBusinesses();
     let added = 0;
     for (const b of bs) {
@@ -58,7 +58,7 @@ export default async function LeadsPage() {
           <table className="w-full text-sm">
             <thead className="border-b"><tr><th className="p-2 text-left">Business</th><th className="p-2 text-left">Category</th><th className="p-2 text-left">City</th><th className="p-2 text-left">Status</th><th className="p-2 text-left">Eligibility</th><th className="p-2"></th></tr></thead>
             <tbody>
-              {queueRows.map(({ dl, b, e }) => {
+              {queueRows.map(({ dl, b, e }: any) => {
                 if (!b) return null;
                 return (
                   <tr key={dl.id} className="border-b">
@@ -85,7 +85,7 @@ export default async function LeadsPage() {
           <table className="w-full text-sm">
             <thead className="border-b"><tr><th className="p-2 text-left">Business</th><th className="p-2 text-left">Reason</th></tr></thead>
             <tbody>
-              {businesses.map((b) => {
+              {businesses.map((b: any) => {
                 const e = eligibleSync(b as any, consentByBiz.get(b.id));
                 return (
                   <tr key={b.id} className="border-b">

@@ -9,7 +9,7 @@ export async function POST(req: Request) {
   const body = await req.json().catch(() => ({}));
   const store = await getStore();
   const business = await store.getBusiness(String(body.business_id));
-  const kb = await store.listKnowledgeBase(undefined, true).map((k) => ({ title: k.title, content: k.content }));
+  const kb = await store.listKnowledgeBase(undefined, true).map((k: any) => ({ title: k.title, content: k.content }));
   const provider = getAIProvider();
   const result = await provider.generateReply(String(body.message || ""), {
     business: business as unknown as Record<string, unknown>,

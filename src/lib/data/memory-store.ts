@@ -182,11 +182,11 @@ class MemoryStore {
     let out = [...this.businesses];
     if (filter?.q) {
       const q = filter.q.toLowerCase();
-      out = out.filter((b) => b.business_name.toLowerCase().includes(q) || (b.contact_person || "").toLowerCase().includes(q) || (b.phone_number || "").includes(q) || (b.business_category || "").toLowerCase().includes(q) || (b.city || "").toLowerCase().includes(q));
+      out = out.filter((b: any) => b.business_name.toLowerCase().includes(q) || (b.contact_person || "").toLowerCase().includes(q) || (b.phone_number || "").includes(q) || (b.business_category || "").toLowerCase().includes(q) || (b.city || "").toLowerCase().includes(q));
     }
-    if (filter?.pipeline_status) out = out.filter((b) => b.pipeline_status === filter.pipeline_status);
-    if (filter?.category) out = out.filter((b) => b.business_category === filter.category);
-    if (filter?.assigned) out = out.filter((b) => b.assigned_to === filter.assigned);
+    if (filter?.pipeline_status) out = out.filter((b: any) => b.pipeline_status === filter.pipeline_status);
+    if (filter?.category) out = out.filter((b: any) => b.business_category === filter.category);
+    if (filter?.assigned) out = out.filter((b: any) => b.assigned_to === filter.assigned);
     return out;
   }
   getBusiness(id: string) { return this.businesses.find((b) => b.id === id) || null; }
@@ -270,7 +270,7 @@ class MemoryStore {
   // ---- daily leads ----
   listDailyLeads(date?: string) {
     let out = [...this.dailyLeads];
-    if (date) out = out.filter((d) => d.selection_date === date);
+    if (date) out = out.filter((d: any) => d.selection_date === date);
     return out;
   }
   addDailyLead(business_id: string, reason?: string) {
@@ -299,7 +299,7 @@ class MemoryStore {
   // ---- message queue ----
   listMessageQueue(status?: string) {
     let out = [...this.messageQueue];
-    if (status) out = out.filter((m) => m.approval_status === status);
+    if (status) out = out.filter((m: any) => m.approval_status === status);
     return out;
   }
   createMessageQueueItem(data: Partial<MessageQueueItem>) {
@@ -350,7 +350,7 @@ class MemoryStore {
   }
 
   // ---- messages ----
-  listMessages(conversation_id: string) { return this.messages.filter((m) => m.conversation_id === conversation_id).sort((a, b) => a.created_at.localeCompare(b.created_at)); }
+  listMessages(conversation_id: string) { return this.messages.filter((m: any) => m.conversation_id === conversation_id).sort((a, b) => a.created_at.localeCompare(b.created_at)); }
   createMessage(data: Partial<Message>) {
     const m: Message = {
       id: this.id(),
@@ -381,7 +381,7 @@ class MemoryStore {
   // ---- follow ups ----
   listFollowUps(status?: string) {
     let out = [...this.followUps];
-    if (status) out = out.filter((f) => f.status === status);
+    if (status) out = out.filter((f: any) => f.status === status);
     return out.sort((a, b) => a.due_at.localeCompare(b.due_at));
   }
   createFollowUp(data: Partial<FollowUp>) {
@@ -409,8 +409,8 @@ class MemoryStore {
   // ---- knowledge base ----
   listKnowledgeBase(category?: string, activeOnly = false) {
     let out = [...this.knowledgeBase];
-    if (category) out = out.filter((k) => k.category === category);
-    if (activeOnly) out = out.filter((k) => k.is_active);
+    if (category) out = out.filter((k: any) => k.category === category);
+    if (activeOnly) out = out.filter((k: any) => k.is_active);
     return out;
   }
   getKnowledgeBase(id: string) { return this.knowledgeBase.find((k) => k.id === id) || null; }
@@ -443,7 +443,7 @@ class MemoryStore {
   }
   searchKnowledgeBase(query: string) {
     const q = query.toLowerCase();
-    return this.knowledgeBase.filter((k) => k.is_active && (k.title.toLowerCase().includes(q) || k.content.toLowerCase().includes(q) || k.category.toLowerCase().includes(q)));
+    return this.knowledgeBase.filter((k: any) => k.is_active && (k.title.toLowerCase().includes(q) || k.content.toLowerCase().includes(q) || k.category.toLowerCase().includes(q)));
   }
 
   // ---- pipeline ----

@@ -33,7 +33,7 @@ export default function AssistantPage() {
           <Select value={businessId} onValueChange={(v) => { if (v) setBusinessId(v); }}>
             <SelectTrigger><SelectValue placeholder="Business" /></SelectTrigger>
             <SelectContent>
-              {businesses.map((b) => <SelectItem key={b.id} value={b.id}>{b.business_name}</SelectItem>)}
+              {businesses.map((b: any) => <SelectItem key={b.id} value={b.id}>{b.business_name}</SelectItem>)}
             </SelectContent>
           </Select>
           <Textarea value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Customer message..." rows={4} />

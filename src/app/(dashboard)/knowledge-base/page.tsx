@@ -9,7 +9,7 @@ export default async function KnowledgeBasePage({ searchParams }: { searchParams
   const store = await getStore();
   const entries = await store.listKnowledgeBase(sp.category);
   const allKb = await store.listKnowledgeBase();
-  const categories = Array.from(new Set(allKb.map((k) => k.category)));
+  const categories = Array.from(new Set(allKb.map((k: any) => k.category)));
 
   return (
     <div className="space-y-4">
@@ -28,7 +28,7 @@ export default async function KnowledgeBasePage({ searchParams }: { searchParams
           <table className="w-full text-sm">
             <thead className="border-b bg-muted/50"><tr><th className="p-3 text-left">Category</th><th className="p-3 text-left">Title</th><th className="p-3 text-left">Active</th><th className="p-3 text-left">Version</th><th className="p-3 text-left">Actions</th></tr></thead>
             <tbody>
-              {entries.map((e) => (
+              {entries.map((e: any) => (
                 <tr key={e.id} className="border-b">
                   <td className="p-3">{e.category}</td>
                   <td className="p-3 font-medium">{e.title}</td>

@@ -6,7 +6,7 @@ import { isSupabaseConfigured, isGeminiConfigured, env } from "@/lib/config/env"
 export default async function SettingsPage() {
   const store = await getStore();
   const settings = await store.listSettings();
-  const get = (k: string) => settings.find((s) => s.setting_key === k)?.setting_value;
+  const get = (k: string) => settings.find((s: any) => s.setting_key === k)?.setting_value;
 
   return (
     <div className="space-y-4">

@@ -19,7 +19,7 @@ export async function POST(req: Request) {
     const phone = r.phone_number ? normalizePhone(r.phone_number) : "";
     // dedup
     if (phone) {
-      const existing = (await store.listBusinesses()).find((b) => b.normalized_phone_number === phone.replace(/\D/g, ""));
+      const existing = (await store.listBusinesses()).find((b: any) => b.normalized_phone_number === phone.replace(/\D/g, ""));
       if (existing) { errors.push(`Row ${i + 2}: duplicate phone ${phone}`); continue; }
     }
     const b = await store.createBusiness({

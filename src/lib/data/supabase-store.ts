@@ -19,7 +19,7 @@ export class SupabaseStore implements DataStore {
     let out = (data || []) as Business[];
     if (filter?.q) {
       const qq = filter.q.toLowerCase();
-      out = out.filter((b) => b.business_name.toLowerCase().includes(qq) || (b.contact_person || "").toLowerCase().includes(qq) || (b.phone_number || "").includes(qq));
+      out = out.filter((b: any) => b.business_name.toLowerCase().includes(qq) || (b.contact_person || "").toLowerCase().includes(qq) || (b.phone_number || "").includes(qq));
     }
     return out;
   }
@@ -233,7 +233,7 @@ export class SupabaseStore implements DataStore {
   async searchKnowledgeBase(query: string) {
     const all = await this.listKnowledgeBase(undefined, true);
     const q = query.toLowerCase();
-    return all.filter((k) => k.title.toLowerCase().includes(q) || k.content.toLowerCase().includes(q));
+    return all.filter((k: any) => k.title.toLowerCase().includes(q) || k.content.toLowerCase().includes(q));
   }
 
   async listPipelines() {

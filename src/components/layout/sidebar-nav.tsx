@@ -40,7 +40,7 @@ export function SidebarNav() {
         </Button>
       </div>
       <nav className="flex-1 overflow-y-auto p-2 space-y-1">
-        {items.map((it) => {
+        {items.map((it: any) => {
           const active = pathname === it.href || (it.href !== "/" && pathname.startsWith(it.href));
           const Icon = it.icon;
           return (
