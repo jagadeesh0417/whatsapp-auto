@@ -27,11 +27,9 @@ export async function createServerSupabaseClient() {
   );
 }
 
-export function createServiceRoleClient() {
+export async function createServiceRoleClient() {
   if (!isSupabaseConfigured || !env.SUPABASE_SERVICE_ROLE_KEY) return null;
-  // Lazy import to avoid bundling in client
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { createClient } = require("@supabase/supabase-js");
+  const { createClient } = await import("@supabase/supabase-js");
   return createClient(env.NEXT_PUBLIC_SUPABASE_URL!, env.SUPABASE_SERVICE_ROLE_KEY, {
     auth: { persistSession: false, autoRefreshToken: false },
   });

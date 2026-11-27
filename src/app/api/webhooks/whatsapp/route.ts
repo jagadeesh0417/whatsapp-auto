@@ -28,7 +28,11 @@ export async function POST(req: Request) {
   let body: any;
   try { body = JSON.parse(raw); } catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }); }
 
-  const store = await getServerStore();
+  const { createServiceRoleClient } = await import("@/lib/supabase/server");
+  const serviceClient = await createServiceRoleClient();
+  const store = serviceClient
+    ? new (await import("@/lib/data/supabase-store")).SupabaseStore(async () => serviceClient)
+    : await getServerStore();
   const entries = body?.entry || [];
   for (const entry of entries) {
     for (const change of entry.changes || []) {
