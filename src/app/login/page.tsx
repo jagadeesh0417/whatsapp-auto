@@ -25,9 +25,19 @@ export default function LoginPage() {
     try {
       if (isSupabaseConfigured) {
         const supabase = createClient();
-        if (!supabase) throw new Error("Supabase not configured");
-        const { error } = await supabase.auth.signInWithPassword(values);
-        if (error) throw error;
+        if (supabase) {
+          const { error } = await supabase.auth.signInWithPassword(values);
+          if (!error) {
+            // success
+          } else {
+            // fall back to demo login
+            const res = await fetch("/api/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(values) });
+            if (!res.ok) {
+              const j = await res.json().catch(() => ({}));
+              throw new Error(j.error || error.message);
+            }
+          }
+        }
       } else {
         const res = await fetch("/api/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(values) });
         if (!res.ok) {

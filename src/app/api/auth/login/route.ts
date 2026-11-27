@@ -16,12 +16,8 @@ export async function POST(req: Request) {
   const parsed = bodySchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: "Invalid credentials" }, { status: 400 });
 
-  if (isSupabaseConfigured) {
-    // Supabase login handled on client; this endpoint is demo-only
-    return NextResponse.json({ error: "Use Supabase client login" }, { status: 400 });
-  }
-
-  // Demo mode: accept configured demo credentials
+  // Demo fallback: accept configured demo credentials even when Supabase is configured.
+  // Supabase login is attempted first on the client; this endpoint provides a local fallback.
   const demoEmail = process.env.DEMO_ADMIN_EMAIL || "admin@akradhi.local";
   const demoPassword = process.env.DEMO_ADMIN_PASSWORD || "demo1234";
   if (parsed.data.email !== demoEmail || parsed.data.password !== demoPassword) {
